@@ -1,40 +1,33 @@
-name: Build Mario Kart PSP
+name: Build PSP EBOOT.PBP
 
 on:
   push:
-  workflow_dispatch:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
+    # PSPSDK ortamını sağlayan Docker konteynerini kullanıyoruz
+    container:
+      image: pspdev/pspdev:latest
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: Build with PSPDEV
+      - name: Build Project with CMake
         run: |
-          docker pull pspdev/pspdev:latest
-          docker run --rm \
-            -v "$GITHUB_WORKSPACE:/source" \
-            -w /source \
-            pspdev/pspdev:latest \
-            sh -c "
-              rm -rf build &&
-              mkdir build &&
-              cd build &&
-              psp-cmake .. &&
-              make -j2
-            "
+          mkdir build && cd build
+          psp-cmake ..
+          make
 
-      - name: Check EBOOT.PBP
-        run: |
-          test -f build/EBOOT.PBP
-          cp build/EBOOT.PBP EBOOT.PBP
-          ls -lh EBOOT.PBP
-
-      - name: Upload EBOOT.PBP
-        uses: actions/upload-artifact@v6
+      - name: Upload EBOOT.PBP Artifact
+        uses: actions/upload-artifact@v4
         with:
-          name: MarioKartPSP-EBOOT-PBP
-          path: EBOOT.PBP
+          name: MarioKartPSP-EBOOT
+          path: |
+            build/EBOOT.PBP
+            build/PARAM.SFO
